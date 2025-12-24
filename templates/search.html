@@ -110,10 +110,12 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for user in users %}
+                        {% for user_data in users %}
+                        {% set user = user_data[0] %}
+                        {% set has_image = user_data[1] %}
                         <tr>
                             <td>
-                                {% if user.imagem_perfil %}
+                                {% if has_image and user.infopen %}
                                     <img src="{{ url_for('get_image', infopen=user.infopen) }}" alt="Imagem de Perfil" class="img-thumbnail" style="width: 50px; height: 50px; object-fit: cover;">
                                 {% else %}
                                     <span class="text-muted">Nenhuma</span>

@@ -77,10 +77,6 @@ class UserRegistration(db.Model):
     ueop = db.Column(db.String(100), nullable=True)
     cia = db.Column(db.String(100), nullable=True)
     restricoes_judiciais = db.Column(db.Text, nullable=True)
-    imagem_perfil = db.Column(
-        db.String(200), nullable=True)  # Added image field
-    # SHA256 hash of the image
-    image_hash = db.Column(db.String(64), nullable=True)
     latitude = db.Column(db.String(20), nullable=True)  # Latitude field
     longitude = db.Column(db.String(20), nullable=True)  # Longitude field
     data_modificacao = db.Column(
@@ -94,9 +90,12 @@ class Images(db.Model):
     __tablename__ = 'images'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     # Foreign key relationship with user_registration.infopen
-    infopen = db.Column(db.String(100), nullable=False)
+    infopen = db.Column(db.String(100), db.ForeignKey('user_registration.infopen'), nullable=False)
     # Store Base64 encoded image
     image_b64 = db.Column(db.Text, nullable=False)
+    # Optional fields for profile image and image hash
+    imagem_perfil = db.Column(db.String(200), nullable=True)  # Added for consistency with old field
+    image_hash = db.Column(db.String(64), nullable=True)  # SHA256 hash of the image
     # Optional datetime field
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -117,8 +116,19 @@ with app.app_context():
         # Add new columns if they don't exist in user_registration
         from sqlalchemy import text
 
-        result = db.session.execute(
-            text("PRAGMA table_info(user_registration)"))
+        # Remove imagem_perfil and image_hash from user_registration table
+        # Since SQLite doesn't support DROP COLUMN directly, we'll just not use these columns going forward
+        # Add new columns to images table if they don't exist
+        result = db.session.execute(text("PRAGMA table_info(images)"))
+        columns = [row[1] for row in result.fetchall()]
+
+        if 'imagem_perfil' not in columns:
+            db.session.execute(text("ALTER TABLE images ADD COLUMN imagem_perfil VARCHAR(200)"))
+        if 'image_hash' not in columns:
+            db.session.execute(text("ALTER TABLE images ADD COLUMN image_hash VARCHAR(64)"))
+
+        # Also check user_registration table for any other columns that may need to be added
+        result = db.session.execute(text("PRAGMA table_info(user_registration)"))
         columns = [row[1] for row in result.fetchall()]
 
         if 'latitude' not in columns:
@@ -127,9 +137,6 @@ with app.app_context():
         if 'longitude' not in columns:
             db.session.execute(
                 text("ALTER TABLE user_registration ADD COLUMN longitude VARCHAR(20)"))
-        if 'image_hash' not in columns:
-            db.session.execute(
-                text("ALTER TABLE user_registration ADD COLUMN image_hash VARCHAR(64)"))
 
         # Rename logradouro column to bairro if it exists
         if 'logradouro' in columns and 'bairro' not in columns:
@@ -179,8 +186,6 @@ def register():
             return render_template('register.html', enterprise_data=ENTERPRISE_DATA, municipalities=MUNICIPALITIES)
 
         # Handle image upload - convert to Base64 and store in images table
-        imagem_perfil = None
-        image_hash = None
         if 'imagem_perfil' in request.files:
             file = request.files['imagem_perfil']
             if file and file.filename != '' and allowed_file(file.filename):
@@ -203,13 +208,11 @@ def register():
                 # Create new image record
                 new_image = Images(
                     infopen=infopen,
-                    image_b64=image_b64
+                    image_b64=image_b64,
+                    imagem_perfil=infopen,  # For consistency
+                    image_hash=image_hash
                 )
                 db.session.add(new_image)
-
-                # For backward compatibility, we still set imagem_perfil to the infopen
-                # to indicate that an image exists for this user
-                imagem_perfil = infopen
 
         # Create new user registration
         new_user = UserRegistration(
@@ -223,8 +226,6 @@ def register():
             ueop=ueop,
             cia=cia,
             restricoes_judiciais=restricoes_judiciais,
-            imagem_perfil=imagem_perfil,
-            image_hash=image_hash,
             latitude=latitude,
             longitude=longitude
         )
@@ -283,13 +284,31 @@ def search():
 
         users = query.all()
 
-    # Prepare enterprise data for the template
-    return render_template('search.html', users=users, enterprise_data=ENTERPRISE_DATA, municipalities=MUNICIPALITIES)
+        # For each user, check if they have an associated image
+        users_with_images = []
+        for user in users:
+            image_exists = Images.query.filter_by(infopen=user.infopen).first() if user.infopen else None
+            users_with_images.append((user, bool(image_exists)))
+
+        # Prepare enterprise data for the template
+        return render_template('search.html', users=users_with_images, enterprise_data=ENTERPRISE_DATA, municipalities=MUNICIPALITIES)
+    else:
+        # For GET requests (no filters), get all users and check for associated images
+        all_users = UserRegistration.query.all()
+        users_with_images = []
+        for user in all_users:
+            image_exists = Images.query.filter_by(infopen=user.infopen).first() if user.infopen else None
+            users_with_images.append((user, bool(image_exists)))
+
+        # Prepare enterprise data for the template
+        return render_template('search.html', users=users_with_images, enterprise_data=ENTERPRISE_DATA, municipalities=MUNICIPALITIES)
 
 
 @app.route('/edit/<int:user_id>', methods=['GET', 'POST'])
 def edit(user_id):
     user = UserRegistration.query.get_or_404(user_id)
+    # Check if user has an associated image
+    image_exists = Images.query.filter_by(infopen=user.infopen).first() if user.infopen else None
 
     if request.method == 'POST':
         # Update user data
@@ -298,7 +317,7 @@ def edit(user_id):
         # Backend validation for infopen field
         if not infopen or not infopen.strip():
             flash('O campo Infopen é obrigatório.', 'error')
-            return render_template('edit.html', user=user, enterprise_data=ENTERPRISE_DATA, municipalities=MUNICIPALITIES)
+            return render_template('edit.html', user=user, image_exists=image_exists, enterprise_data=ENTERPRISE_DATA, municipalities=MUNICIPALITIES)
 
         # Check if infopen already exists for a different user (avoiding self-conflict)
         existing_user = UserRegistration.query.filter(
@@ -307,7 +326,7 @@ def edit(user_id):
         ).first()
         if existing_user:
             flash('Egresso já cadastrado!', 'error')
-            return render_template('edit.html', user=user, enterprise_data=ENTERPRISE_DATA, municipalities=MUNICIPALITIES)
+            return render_template('edit.html', user=user, image_exists=image_exists, enterprise_data=ENTERPRISE_DATA, municipalities=MUNICIPALITIES)
 
         user.infopen = infopen
         user.nome_completo = request.form.get('nome_completo')
@@ -330,7 +349,7 @@ def edit(user_id):
                 file_content = file.read()
 
                 # Calculate the SHA256 hash of the image file
-                user.image_hash = hashlib.sha256(file_content).hexdigest()
+                image_hash = hashlib.sha256(file_content).hexdigest()
 
                 # Convert the image to Base64
                 image_b64 = base64.b64encode(file_content).decode('utf-8')
@@ -345,13 +364,11 @@ def edit(user_id):
                 # Create new image record
                 new_image = Images(
                     infopen=user.infopen,
-                    image_b64=image_b64
+                    image_b64=image_b64,
+                    imagem_perfil=user.infopen,  # For consistency
+                    image_hash=image_hash
                 )
                 db.session.add(new_image)
-
-                # For backward compatibility, we still set imagem_perfil to the infopen
-                # to indicate that an image exists for this user
-                user.imagem_perfil = user.infopen
 
         try:
             db.session.commit()
@@ -361,7 +378,7 @@ def edit(user_id):
             db.session.rollback()
             flash(f'Erro ao atualizar o registro: {str(e)}', 'error')
 
-    return render_template('edit.html', user=user, enterprise_data=ENTERPRISE_DATA, municipalities=MUNICIPALITIES)
+    return render_template('edit.html', user=user, image_exists=image_exists, enterprise_data=ENTERPRISE_DATA, municipalities=MUNICIPALITIES)
 
 # Add route to serve Base64 images from the database
 
@@ -469,7 +486,7 @@ def export_csv():
     writer.writerow([
         'ID', 'Infopen', 'Nome Completo', 'CPF', 'Rua', 'Bairro',
         'Número', 'Município', 'UEOP', 'CIA', 'Restrições Judiciais',
-        'Imagem de Perfil', 'Image Hash', 'Latitude', 'Longitude', 'Data de Modificação'
+        'Latitude', 'Longitude', 'Data de Modificação'
     ])
 
     # Write data rows
@@ -486,8 +503,6 @@ def export_csv():
             user.ueop or '',
             user.cia or '',
             user.restricoes_judiciais or '',
-            user.imagem_perfil or '',
-            user.image_hash or '',  # Include the image hash in the export
             user.latitude or '',
             user.longitude or '',
             user.data_modificacao.strftime(

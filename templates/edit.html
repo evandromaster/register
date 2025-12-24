@@ -47,12 +47,12 @@
                 <div class="col-md-6 mb-3">
                     <label for="imagem_perfil" class="form-label">Imagem de Perfil</label>
                     <input type="file" class="form-control" id="imagem_perfil" name="imagem_perfil" accept="image/*">
-                    {% if user.imagem_perfil %}
-                        <div class="mt-2">
-                            <label class="form-label">Imagem Atual:</label>
-                            <br>
-                            <img src="{{ url_for('get_image', infopen=user.infopen) }}" alt="Imagem de Perfil" class="img-thumbnail" style="max-width: 150px; max-height: 150px;">
-                        </div>
+                    {% if image_exists %}
+                    <div class="mt-2">
+                        <label class="form-label">Imagem Atual:</label>
+                        <br>
+                        <img src="{{ url_for('get_image', infopen=user.infopen) }}" alt="Imagem de Perfil" class="img-thumbnail" style="max-width: 150px; max-height: 150px;">
+                    </div>
                     {% endif %}
                 </div>
             </div>
