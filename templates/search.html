@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Filtrar Usuários</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">Filtrar Usuários</h1>
+
+        <form method="POST" action="{{ url_for('search') }}">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="infopen" class="form-label">Infopen</label>
+                    <input type="text" class="form-control" id="infopen" name="infopen" value="{{ request.form.infopen }}">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="nome_completo" class="form-label">Nome Completo</label>
+                    <input type="text" class="form-control" id="nome_completo" name="nome_completo" value="{{ request.form.nome_completo }}">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="cpf" class="form-label">CPF</label>
+                    <input type="text" class="form-control" id="cpf" name="cpf" value="{{ request.form.cpf }}">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="municipio" class="form-label">Município</label>
+                    <input type="text" class="form-control" id="municipio" name="municipio" value="{{ request.form.municipio }}">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="ueop" class="form-label">UEOP</label>
+                    <select class="form-control" id="ueop" name="ueop">
+                        <option value="">Todas as UEOPs</option>
+                        {% for ueop_name in enterprise_data.keys() %}
+                            <option value="{{ ueop_name }}" {% if request.form.ueop == ueop_name %}selected{% endif %}>{{ ueop_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="cia" class="form-label">CIA</label>
+                    <select class="form-control" id="cia" name="cia">
+                        <option value="">Todas as CIAs</option>
+                        {% for cias in enterprise_data.values() %}
+                            {% for cia_name in cias %}
+                                <option value="{{ cia_name }}" {% if request.form.cia == cia_name %}selected{% endif %}>{{ cia_name }}</option>
+                            {% endfor %}
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="latitude" class="form-label">Latitude</label>
+                    <input type="text" class="form-control" id="latitude" name="latitude" value="{{ request.form.latitude }}" placeholder="-90.0 to 90.0">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="longitude" class="form-label">Longitude</label>
+                    <input type="text" class="form-control" id="longitude" name="longitude" value="{{ request.form.longitude }}" placeholder="-180.0 to 180.0">
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Filtrar</button>
+            <a href="{{ url_for('register') }}" class="btn btn-secondary">Novo Registro</a>
+        </form>
+
+        <hr>
+
+        <div class="d-flex justify-content-between align-items-center">
+            <h2>Resultados</h2>
+            <form method="POST" action="{{ url_for('export_csv') }}" style="display: inline;">
+                <!-- Hidden fields to pass the current filter values -->
+                <input type="hidden" name="infopen" value="{{ request.form.infopen or '' }}">
+                <input type="hidden" name="nome_completo" value="{{ request.form.nome_completo or '' }}">
+                <input type="hidden" name="cpf" value="{{ request.form.cpf or '' }}">
+                <input type="hidden" name="municipio" value="{{ request.form.municipio or '' }}">
+                <input type="hidden" name="ueop" value="{{ request.form.ueop or '' }}">
+                <input type="hidden" name="cia" value="{{ request.form.cia or '' }}">
+                <input type="hidden" name="latitude" value="{{ request.form.latitude or '' }}">
+                <input type="hidden" name="longitude" value="{{ request.form.longitude or '' }}">
+                <button type="submit" class="btn btn-success">Exportar CSV</button>
+            </form>
+        </div>
+        {% if users %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Imagem</th>
+                            <th>Infopen</th>
+                            <th>Nome Completo</th>
+                            <th>CPF</th>
+                            <th>Rua</th>
+                            <th>Bairro</th>
+                            <th>Número</th>
+                            <th>Município</th>
+                            <th>UEOP</th>
+                            <th>CIA</th>
+                            <th>Latitude</th>
+                            <th>Longitude</th>
+                            <th>Atualizado</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>
+                                {% if user.imagem_perfil %}
+                                    <img src="{{ url_for('get_image', infopen=user.infopen) }}" alt="Imagem de Perfil" class="img-thumbnail" style="width: 50px; height: 50px; object-fit: cover;">
+                                {% else %}
+                                    <span class="text-muted">Nenhuma</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ user.infopen or '' }}</td>
+                            <td>{{ user.nome_completo or '' }}</td>
+                            <td>{{ user.cpf or '' }}</td>
+                            <td>{{ user.rua or '' }}</td>
+                            <td>{{ user.bairro or '' }}</td>
+                            <td>{{ user.numero or '' }}</td>
+                            <td>{{ user.municipio or '' }}</td>
+                            <td>{{ user.ueop or '' }}</td>
+                            <td>{{ user.cia or '' }}</td>
+                            <td>{{ user.latitude or '' }}</td>
+                            <td>{{ user.longitude or '' }}</td>
+                            <td>{{ user.data_modificacao.strftime('%d/%m/%Y %H:%M:%S') if user.data_modificacao else 'Nunca' }}</td>
+                            <td>
+                                <a href="{{ url_for('edit', user_id=user.id) }}" class="btn btn-sm btn-outline-primary me-1">Editar</a>
+                                <form method="POST" action="{{ url_for('delete', user_id=user.id) }}" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja excluir este registro?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Excluir</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-muted">Nenhum registro encontrado.</p>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Define enterprise data as JavaScript object
+        const enterpriseData = {{ enterprise_data|tojson }};
+
+        // Update CIA dropdown based on selected UEOP
+        document.getElementById('ueop').addEventListener('change', function() {
+            const selectedUeop = this.value;
+            const ciaSelect = document.getElementById('cia');
+            const originalValue = "{{ request.form.cia }}";
+
+            // Clear current options
+            ciaSelect.innerHTML = '<option value="">Todas as CIAs</option>';
+
+            if (selectedUeop && enterpriseData[selectedUeop]) {
+                // Add only CIAs related to selected UEOP
+                enterpriseData[selectedUeop].forEach(function(cia) {
+                    const option = document.createElement('option');
+                    option.value = cia;
+                    option.textContent = cia;
+                    // Preserve the form value if it matches this CIA
+                    if (originalValue === cia) {
+                        option.selected = true;
+                    }
+                    ciaSelect.appendChild(option);
+                });
+
+                // If the original value was not in the filtered options, add it back
+                if (originalValue && enterpriseData[selectedUeop].indexOf(originalValue) === -1 && originalValue !== "") {
+                    const originalOption = document.createElement('option');
+                    originalOption.value = originalValue;
+                    originalOption.textContent = originalValue;
+                    originalOption.selected = true;
+                    ciaSelect.appendChild(originalOption);
+                }
+            } else {
+                // If no UEOP selected, show all CIAs
+                const allCias = [];
+                for (const ueop in enterpriseData) {
+                    enterpriseData[ueop].forEach(function(cia) {
+                        if (!allCias.includes(cia)) {
+                            allCias.push(cia);
+                        }
+                    });
+                }
+
+                allCias.forEach(function(cia) {
+                    const option = document.createElement('option');
+                    option.value = cia;
+                    option.textContent = cia;
+                    // Preserve the form value if it matches this CIA
+                    if (originalValue === cia) {
+                        option.selected = true;
+                    }
+                    ciaSelect.appendChild(option);
+                });
+            }
+        });
+
+        // Trigger change event on page load to set initial state if UEOP is already selected
+        document.getElementById('ueop').dispatchEvent(new Event('change'));
+    </script>
+</body>
+</html>

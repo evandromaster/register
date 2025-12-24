@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Usuários</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">Cadastro de Usuários</h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('register') }}" enctype="multipart/form-data">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="infopen" class="form-label">Infopen *</label>
+                    <input type="text" class="form-control" id="infopen" name="infopen" value="{{ request.form.infopen }}" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="nome_completo" class="form-label">Nome Completo *</label>
+                    <input type="text" class="form-control" id="nome_completo" name="nome_completo" value="{{ request.form.nome_completo }}" required>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="cpf" class="form-label">CPF</label>
+                    <input type="text" class="form-control" id="cpf" name="cpf" value="{{ request.form.cpf }}" placeholder="000.000.000-00">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="imagem_perfil" class="form-label">Imagem de Perfil</label>
+                    <input type="file" class="form-control" id="imagem_perfil" name="imagem_perfil" accept="image/*">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="rua" class="form-label">Rua</label>
+                    <input type="text" class="form-control" id="rua" name="rua" value="{{ request.form.rua }}">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="bairro" class="form-label">Bairro</label>
+                    <input type="text" class="form-control" id="bairro" name="bairro" value="{{ request.form.bairro }}">
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label for="numero" class="form-label">Número</label>
+                    <input type="text" class="form-control" id="numero" name="numero" value="{{ request.form.numero }}">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="municipio" class="form-label">Município</label>
+                    <select class="form-control" id="municipio" name="municipio">
+                        <option value="">Selecione um Município</option>
+                        {% for municipio in municipalities %}
+                            <option value="{{ municipio }}" {% if request.form.municipio == municipio %}selected{% endif %}>{{ municipio }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="ueop" class="form-label">UEOP</label>
+                    <select class="form-control" id="ueop" name="ueop">
+                        <option value="">Selecione uma UEOP</option>
+                        {% for ueop_name in enterprise_data.keys() %}
+                            <option value="{{ ueop_name }}" {% if request.form.ueop == ueop_name %}selected{% endif %}>{{ ueop_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="cia" class="form-label">CIA</label>
+                    <select class="form-control" id="cia" name="cia">
+                        <option value="">Selecione uma CIA</option>
+                        {% for cias in enterprise_data.values() %}
+                            {% for cia_name in cias %}
+                                <option value="{{ cia_name }}" {% if request.form.cia == cia_name %}selected{% endif %}>{{ cia_name }}</option>
+                            {% endfor %}
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="restricoes_judiciais" class="form-label">Restrições Judiciais</label>
+                <textarea class="form-control" id="restricoes_judiciais" name="restricoes_judiciais" rows="3">{{ request.form.restricoes_judiciais }}</textarea>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="latitude" class="form-label">Latitude</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="latitude" name="latitude" value="{{ request.form.latitude }}" placeholder="-90.0 to 90.0">
+                        <button type="button" class="btn btn-outline-secondary" id="getCoordinatesBtn">Obter coordenadas</button>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="longitude" class="form-label">Longitude</label>
+                    <input type="text" class="form-control" id="longitude" name="longitude" value="{{ request.form.longitude }}" placeholder="-180.0 to 180.0">
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Salvar</button>
+            <a href="{{ url_for('search') }}" class="btn btn-secondary">Ver Registros</a>
+        </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Define enterprise data as JavaScript object
+        const enterpriseData = {{ enterprise_data|tojson }};
+
+        // Update CIA dropdown based on selected UEOP
+        document.getElementById('ueop').addEventListener('change', function() {
+            const selectedUeop = this.value;
+            const ciaSelect = document.getElementById('cia');
+            const originalValue = "{{ request.form.cia }}";
+
+            // Clear current options
+            ciaSelect.innerHTML = '<option value="">Selecione uma CIA</option>';
+
+            if (selectedUeop && enterpriseData[selectedUeop]) {
+                // Add only CIAs related to selected UEOP
+                enterpriseData[selectedUeop].forEach(function(cia) {
+                    const option = document.createElement('option');
+                    option.value = cia;
+                    option.textContent = cia;
+                    // Preserve the form value if it matches this CIA
+                    if (originalValue === cia) {
+                        option.selected = true;
+                    }
+                    ciaSelect.appendChild(option);
+                });
+
+                // If the original value was not in the filtered options, add it back
+                if (originalValue && enterpriseData[selectedUeop].indexOf(originalValue) === -1 && originalValue !== "") {
+                    const originalOption = document.createElement('option');
+                    originalOption.value = originalValue;
+                    originalOption.textContent = originalValue;
+                    originalOption.selected = true;
+                    ciaSelect.appendChild(originalOption);
+                }
+            } else {
+                // If no UEOP selected, show all CIAs
+                const allCias = [];
+                for (const ueop in enterpriseData) {
+                    enterpriseData[ueop].forEach(function(cia) {
+                        if (!allCias.includes(cia)) {
+                            allCias.push(cia);
+                        }
+                    });
+                }
+
+                allCias.forEach(function(cia) {
+                    const option = document.createElement('option');
+                    option.value = cia;
+                    option.textContent = cia;
+                    // Preserve the form value if it matches this CIA
+                    if (originalValue === cia) {
+                        option.selected = true;
+                    }
+                    ciaSelect.appendChild(option);
+                });
+            }
+        });
+
+        // Trigger change event on page load to set initial state if UEOP is already selected
+        document.getElementById('ueop').dispatchEvent(new Event('change'));
+
+        // Function to receive coordinates from the map modal
+        function receiveCoordinates(lat, lng) {
+            document.getElementById('latitude').value = lat;
+            document.getElementById('longitude').value = lng;
+        }
+
+        // Open the map modal in a new window when the button is clicked
+        document.getElementById('getCoordinatesBtn').addEventListener('click', function() {
+            // Open the map page in a new window
+            const mapWindow = window.open('/map', 'mapModal', 'width=800,height=700,scrollbars=yes,resizable=yes');
+
+            // Focus the new window
+            if (mapWindow) {
+                mapWindow.focus();
+            }
+        });
+
+        // Listen for messages from the map modal (for alternative implementation)
+        window.addEventListener('message', function(event) {
+            if (event.data.type === 'coordinatesSelected') {
+                document.getElementById('latitude').value = event.data.latitude;
+                document.getElementById('longitude').value = event.data.longitude;
+            }
+            else if (event.data.type === 'closeMapModal') {
+                // If needed, handle close modal event
+            }
+        });
+    </script>
+</body>
+</html>
