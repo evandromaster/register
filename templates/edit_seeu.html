@@ -1,0 +1,57 @@
+{% extends "menu.html" %}
+
+{% block title %}Editar Informações do SEEU{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">Editar Informações do SEEU</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('edit_seeu', record_id=record.id) }}">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="infopen" class="form-label">Infopen</label>
+                <select class="form-control" id="infopen" name="infopen" required>
+                    <option value="">Selecione um Infopen</option>
+                    {% for user in users %}
+                        <option value="{{ user.infopen }}" {% if record.infopen == user.infopen %}selected{% endif %}>{{ user.infopen }} - {{ user.nome_completo }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="data_notificacao" class="form-label">Data da Notificação</label>
+                <input type="date" class="form-control" id="data_notificacao" name="data_notificacao" value="{{ record.data_notificacao.strftime('%Y-%m-%d') if record.data_notificacao else '' }}">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="numero_seeu" class="form-label">Número do SEEU</label>
+                <input type="text" class="form-control" id="numero_seeu" name="numero_seeu" value="{{ record.numero_seeu or '' }}">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="protocolo" class="form-label">Protocolo</label>
+                <input type="text" class="form-control" id="protocolo" name="protocolo" value="{{ record.protocolo or '' }}">
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label for="anotacoes" class="form-label">Anotações</label>
+            <textarea class="form-control" id="anotacoes" name="anotacoes" rows="4">{{ record.anotacoes or '' }}</textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Atualizar</button>
+        <a href="{{ url_for('seeu') }}" class="btn btn-secondary">Voltar</a>
+    </form>
+</div>
+{% endblock %}

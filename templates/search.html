@@ -1,215 +1,389 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Filtrar Usuários</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
-    <div class="container mt-5">
-        <h1 class="mb-4">Filtrar Usuários</h1>
+{% extends "menu.html" %}
 
-        <form method="POST" action="{{ url_for('search') }}">
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="infopen" class="form-label">Infopen</label>
-                    <input type="text" class="form-control" id="infopen" name="infopen" value="{{ request.form.infopen }}">
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label for="nome_completo" class="form-label">Nome Completo</label>
-                    <input type="text" class="form-control" id="nome_completo" name="nome_completo" value="{{ request.form.nome_completo }}">
-                </div>
+{% block title %}Filtrar Usuários{% endblock %}
+
+{% block content %}
+<style>
+    /* Custom styles to improve table responsiveness */
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .table th, .table td {
+        white-space: nowrap;
+        vertical-align: middle;
+    }
+
+    .table th {
+        font-size: 0.85rem;
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+    }
+
+    .table td {
+        font-size: 0.85rem;
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+    }
+
+    .btn-table {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+        margin: 0.1rem 0;
+    }
+
+    .text-truncate-small {
+        max-width: 100px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .text-truncate-medium {
+        max-width: 150px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .text-truncate-large {
+        max-width: 200px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .table td, .table th {
+            font-size: 0.8rem;
+            padding: 0.25rem;
+        }
+
+        .btn-table {
+            padding: 0.2rem 0.4rem;
+            font-size: 0.7rem;
+        }
+
+        .text-truncate-small {
+            max-width: 70px;
+        }
+
+        .text-truncate-medium {
+            max-width: 100px;
+        }
+
+        .text-truncate-large {
+            max-width: 120px;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .table td, .table th {
+            font-size: 0.75rem;
+            padding: 0.15rem;
+        }
+
+        .btn-table {
+            padding: 0.15rem 0.3rem;
+            font-size: 0.65rem;
+        }
+    }
+</style>
+
+<div class="container mt-5">
+    <h1 class="mb-4">Filtrar Egressos</h1>
+
+    <form method="POST" action="{{ url_for('search') }}">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="infopen" class="form-label">Infopen</label>
+                <input type="text" class="form-control" id="infopen" name="infopen" value="{{ request.form.infopen }}">
             </div>
-
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="cpf" class="form-label">CPF</label>
-                    <input type="text" class="form-control" id="cpf" name="cpf" value="{{ request.form.cpf }}">
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label for="municipio" class="form-label">Município</label>
-                    <input type="text" class="form-control" id="municipio" name="municipio" value="{{ request.form.municipio }}">
-                </div>
+            <div class="col-md-6 mb-3">
+                <label for="nome_completo" class="form-label">Nome</label>
+                <input type="text" class="form-control" id="nome_completo" name="nome_completo" value="{{ request.form.nome_completo }}">
             </div>
-
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="ueop" class="form-label">UEOP</label>
-                    <select class="form-control" id="ueop" name="ueop">
-                        <option value="">Todas as UEOPs</option>
-                        {% for ueop_name in enterprise_data.keys() %}
-                            <option value="{{ ueop_name }}" {% if request.form.ueop == ueop_name %}selected{% endif %}>{{ ueop_name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label for="cia" class="form-label">CIA</label>
-                    <select class="form-control" id="cia" name="cia">
-                        <option value="">Todas as CIAs</option>
-                        {% for cias in enterprise_data.values() %}
-                            {% for cia_name in cias %}
-                                <option value="{{ cia_name }}" {% if request.form.cia == cia_name %}selected{% endif %}>{{ cia_name }}</option>
-                            {% endfor %}
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="latitude" class="form-label">Latitude</label>
-                    <input type="text" class="form-control" id="latitude" name="latitude" value="{{ request.form.latitude }}" placeholder="-90.0 to 90.0">
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label for="longitude" class="form-label">Longitude</label>
-                    <input type="text" class="form-control" id="longitude" name="longitude" value="{{ request.form.longitude }}" placeholder="-180.0 to 180.0">
-                </div>
-            </div>
-
-            <button type="submit" class="btn btn-primary">Filtrar</button>
-            <a href="{{ url_for('register') }}" class="btn btn-secondary">Novo Registro</a>
-        </form>
-
-        <hr>
-
-        <div class="d-flex justify-content-between align-items-center">
-            <h2>Resultados</h2>
-            <form method="POST" action="{{ url_for('export_csv') }}" style="display: inline;">
-                <!-- Hidden fields to pass the current filter values -->
-                <input type="hidden" name="infopen" value="{{ request.form.infopen or '' }}">
-                <input type="hidden" name="nome_completo" value="{{ request.form.nome_completo or '' }}">
-                <input type="hidden" name="cpf" value="{{ request.form.cpf or '' }}">
-                <input type="hidden" name="municipio" value="{{ request.form.municipio or '' }}">
-                <input type="hidden" name="ueop" value="{{ request.form.ueop or '' }}">
-                <input type="hidden" name="cia" value="{{ request.form.cia or '' }}">
-                <input type="hidden" name="latitude" value="{{ request.form.latitude or '' }}">
-                <input type="hidden" name="longitude" value="{{ request.form.longitude or '' }}">
-                <button type="submit" class="btn btn-success">Exportar CSV</button>
-            </form>
         </div>
-        {% if users %}
-            <div class="table-responsive">
-                <table class="table table-striped table-hover">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Imagem</th>
-                            <th>Infopen</th>
-                            <th>Nome Completo</th>
-                            <th>CPF</th>
-                            <th>Rua</th>
-                            <th>Bairro</th>
-                            <th>Número</th>
-                            <th>Município</th>
-                            <th>UEOP</th>
-                            <th>CIA</th>
-                            <th>Latitude</th>
-                            <th>Longitude</th>
-                            <th>Atualizado</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for user_data in users %}
-                        {% set user = user_data[0] %}
-                        {% set has_image = user_data[1] %}
-                        <tr>
-                            <td>
-                                {% if has_image and user.infopen %}
-                                    <img src="{{ url_for('get_image', infopen=user.infopen) }}" alt="Imagem de Perfil" class="img-thumbnail" style="width: 50px; height: 50px; object-fit: cover;">
-                                {% else %}
-                                    <span class="text-muted">Nenhuma</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ user.infopen or '' }}</td>
-                            <td>{{ user.nome_completo or '' }}</td>
-                            <td>{{ user.cpf or '' }}</td>
-                            <td>{{ user.rua or '' }}</td>
-                            <td>{{ user.bairro or '' }}</td>
-                            <td>{{ user.numero or '' }}</td>
-                            <td>{{ user.municipio or '' }}</td>
-                            <td>{{ user.ueop or '' }}</td>
-                            <td>{{ user.cia or '' }}</td>
-                            <td>{{ user.latitude or '' }}</td>
-                            <td>{{ user.longitude or '' }}</td>
-                            <td>{{ user.data_modificacao.strftime('%d/%m/%Y %H:%M:%S') if user.data_modificacao else 'Nunca' }}</td>
-                            <td>
-                                <a href="{{ url_for('edit', user_id=user.id) }}" class="btn btn-sm btn-outline-primary me-1">Editar</a>
-                                <form method="POST" action="{{ url_for('delete', user_id=user.id) }}" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja excluir este registro?');">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">Excluir</button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="cpf" class="form-label">CPF</label>
+                <input type="text" class="form-control" id="cpf" name="cpf" value="{{ request.form.cpf }}">
             </div>
-        {% else %}
-            <p class="text-muted">Nenhum registro encontrado.</p>
-        {% endif %}
+            <div class="col-md-6 mb-3">
+                <label for="municipio" class="form-label">Município</label>
+                <input type="text" class="form-control" id="municipio" name="municipio" value="{{ request.form.municipio }}">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="ueop" class="form-label">UEOP</label>
+                <select class="form-control" id="ueop" name="ueop">
+                    <option value="">Todas as UEOPs</option>
+                    {% for ueop_name in enterprise_data.keys() %}
+                        <option value="{{ ueop_name }}" {% if request.form.ueop == ueop_name %}selected{% endif %}>{{ ueop_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="cia" class="form-label">CIA</label>
+                <select class="form-control" id="cia" name="cia">
+                    <option value="">Todas as CIAs</option>
+                    {% for cias in enterprise_data.values() %}
+                        {% for cia_name in cias %}
+                            <option value="{{ cia_name }}" {% if request.form.cia == cia_name %}selected{% endif %}>{{ cia_name }}</option>
+                        {% endfor %}
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label for="data_modificacao" class="form-label">Data de Modificação</label>
+                <input type="date" class="form-control" id="data_modificacao" name="data_modificacao" value="{{ request.form.data_modificacao }}">
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="ano_modificacao" class="form-label">Ano</label>
+                <input type="number" class="form-control" id="ano_modificacao" name="ano_modificacao" value="{{ request.form.ano_modificacao }}" min="2000" max="2030" placeholder="Ex: 2026">
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="mes_modificacao" class="form-label">Mês</label>
+                <select class="form-control" id="mes_modificacao" name="mes_modificacao">
+                    <option value="">Todos os meses</option>
+                    <option value="1" {% if request.form.mes_modificacao == '1' %}selected{% endif %}>Janeiro</option>
+                    <option value="2" {% if request.form.mes_modificacao == '2' %}selected{% endif %}>Fevereiro</option>
+                    <option value="3" {% if request.form.mes_modificacao == '3' %}selected{% endif %}>Março</option>
+                    <option value="4" {% if request.form.mes_modificacao == '4' %}selected{% endif %}>Abril</option>
+                    <option value="5" {% if request.form.mes_modificacao == '5' %}selected{% endif %}>Maio</option>
+                    <option value="6" {% if request.form.mes_modificacao == '6' %}selected{% endif %}>Junho</option>
+                    <option value="7" {% if request.form.mes_modificacao == '7' %}selected{% endif %}>Julho</option>
+                    <option value="8" {% if request.form.mes_modificacao == '8' %}selected{% endif %}>Agosto</option>
+                    <option value="9" {% if request.form.mes_modificacao == '9' %}selected{% endif %}>Setembro</option>
+                    <option value="10" {% if request.form.mes_modificacao == '10' %}selected{% endif %}>Outubro</option>
+                    <option value="11" {% if request.form.mes_modificacao == '11' %}selected{% endif %}>Novembro</option>
+                    <option value="12" {% if request.form.mes_modificacao == '12' %}selected{% endif %}>Dezembro</option>
+                </select>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Filtrar</button>
+        <a href="{{ url_for('register') }}" class="btn btn-secondary">Novo Registro</a>
+        <a href="{{ url_for('seeu') }}" class="btn btn-info">SEEU</a>
+    </form>
+
+    <hr>
+
+    <div class="d-flex justify-content-between align-items-center">
+        <h2>Resultados</h2>
+        <form method="POST" action="{{ url_for('export_csv') }}" style="display: inline;">
+            <!-- Hidden fields to pass the current filter values -->
+            <input type="hidden" name="infopen" value="{{ request.form.infopen or '' }}">
+            <input type="hidden" name="nome_completo" value="{{ request.form.nome_completo or '' }}">
+            <input type="hidden" name="cpf" value="{{ request.form.cpf or '' }}">
+            <input type="hidden" name="municipio" value="{{ request.form.municipio or '' }}">
+            <input type="hidden" name="ueop" value="{{ request.form.ueop or '' }}">
+            <input type="hidden" name="cia" value="{{ request.form.cia or '' }}">
+            <input type="hidden" name="data_modificacao" value="{{ request.form.data_modificacao or '' }}">
+            <input type="hidden" name="ano_modificacao" value="{{ request.form.ano_modificacao or '' }}">
+            <input type="hidden" name="mes_modificacao" value="{{ request.form.mes_modificacao or '' }}">
+            <button type="submit" class="btn btn-success">Exportar CSV</button>
+        </form>
     </div>
+    {% if users %}
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="text-center">Imagem</th>
+                        <th class="text-truncate-medium">Infopen</th>
+                        <th class="text-truncate-large">Nome</th>
+                        <th class="text-truncate-small">CPF</th>
+                        <th class="text-truncate-medium">Endereço</th>
+                        <th class="text-truncate-medium">Município</th>
+                        <th class="text-truncate-medium">Unidade</th>
+                        <th class="text-truncate-medium">Coordenadas</th>
+                        <th class="text-truncate-medium">Atualizado</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user_data in users %}
+                    {% set user = user_data[0] %}
+                    {% set has_image = user_data[1] %}
+                    <tr>
+                        <td class="text-center">
+                            {% if has_image and user.infopen %}
+                                <img src="{{ url_for('get_image', infopen=user.infopen) }}" alt="Imagem de Perfil" class="img-thumbnail rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-truncate-medium">{{ user.infopen or '' }}</td>
+                        <td class="text-truncate-large">{{ user.nome_completo or '' }}</td>
+                        <td class="text-truncate-small">{{ user.cpf or '' }}</td>
+                        <td class="text-truncate-medium">
+                            {{ user.rua or '' }} {{ user.numero or '' }}, {{ user.bairro or '' }}
+                        </td>
+                        <td class="text-truncate-medium">{{ user.municipio or '' }}</td>
+                        <td class="text-truncate-medium">
+                            {{ user.ueop or '' }}<br><small class="text-muted">{{ user.cia or '' }}</small>
+                        </td>
+                        <td class="text-truncate-medium">
+                            {{ user.latitude or '' }}<br>{{ user.longitude or '' }}
+                        </td>
+                        <td class="text-truncate-medium">
+                            {{ user.data_modificacao.strftime('%d/%m/%Y') if user.data_modificacao else 'Nunca' }}
+                        </td>
+                        <td class="text-nowrap">
+                            <a href="{{ url_for('edit', user_id=user.id) }}" class="btn btn-sm btn-outline-primary btn-table">Editar</a>
+                            <form method="POST" action="{{ url_for('delete', user_id=user.id) }}" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja excluir este registro?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger btn-table">Excluir</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Define enterprise data as JavaScript object
-        const enterpriseData = {{ enterprise_data|tojson }};
+        <!-- Pagination Controls -->
+        {% if pagination %}
+            <nav aria-label="Paginação de resultados">
+                <ul class="pagination justify-content-center">
+                    <!-- Previous Page Link -->
+                    <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('search', page=pagination.prev_num,
+                            infopen=request.form.infopen or request.args.get('infopen', ''),
+                            nome_completo=request.form.nome_completo or request.args.get('nome_completo', ''),
+                            cpf=request.form.cpf or request.args.get('cpf', ''),
+                            municipio=request.form.municipio or request.args.get('municipio', ''),
+                            ueop=request.form.ueop or request.args.get('ueop', ''),
+                            cia=request.form.cia or request.args.get('cia', ''),
+                            data_modificacao=request.form.data_modificacao or request.args.get('data_modificacao', ''),
+                            ano_modificacao=request.form.ano_modificacao or request.args.get('ano_modificacao', ''),
+                            mes_modificacao=request.form.mes_modificacao or request.args.get('mes_modificacao', '')) }}">&laquo; Anterior</a>
+                    </li>
 
-        // Update CIA dropdown based on selected UEOP
-        document.getElementById('ueop').addEventListener('change', function() {
-            const selectedUeop = this.value;
-            const ciaSelect = document.getElementById('cia');
-            const originalValue = "{{ request.form.cia }}";
+                    <!-- Page Numbers -->
+                    {% for page_num in pagination.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != pagination.page %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('search', page=page_num,
+                                        infopen=request.form.infopen or request.args.get('infopen', ''),
+                                        nome_completo=request.form.nome_completo or request.args.get('nome_completo', ''),
+                                        cpf=request.form.cpf or request.args.get('cpf', ''),
+                                        municipio=request.form.municipio or request.args.get('municipio', ''),
+                                        ueop=request.form.ueop or request.args.get('ueop', ''),
+                                        cia=request.form.cia or request.args.get('cia', ''),
+                                        data_modificacao=request.form.data_modificacao or request.args.get('data_modificacao', ''),
+                                        ano_modificacao=request.form.ano_modificacao or request.args.get('ano_modificacao', ''),
+                                        mes_modificacao=request.form.mes_modificacao or request.args.get('mes_modificacao', '')) }}">{{ page_num }}</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_num }}</span>
+                                </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">…</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
 
-            // Clear current options
-            ciaSelect.innerHTML = '<option value="">Todas as CIAs</option>';
+                    <!-- Next Page Link -->
+                    <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('search', page=pagination.next_num,
+                            infopen=request.form.infopen or request.args.get('infopen', ''),
+                            nome_completo=request.form.nome_completo or request.args.get('nome_completo', ''),
+                            cpf=request.form.cpf or request.args.get('cpf', ''),
+                            municipio=request.form.municipio or request.args.get('municipio', ''),
+                            ueop=request.form.ueop or request.args.get('ueop', ''),
+                            cia=request.form.cia or request.args.get('cia', ''),
+                            data_modificacao=request.form.data_modificacao or request.args.get('data_modificacao', ''),
+                            ano_modificacao=request.form.ano_modificacao or request.args.get('ano_modificacao', ''),
+                            mes_modificacao=request.form.mes_modificacao or request.args.get('mes_modificacao', '')) }}">Próxima &raquo;</a>
+                    </li>
+                </ul>
+            </nav>
 
-            if (selectedUeop && enterpriseData[selectedUeop]) {
-                // Add only CIAs related to selected UEOP
-                enterpriseData[selectedUeop].forEach(function(cia) {
-                    const option = document.createElement('option');
-                    option.value = cia;
-                    option.textContent = cia;
-                    // Preserve the form value if it matches this CIA
-                    if (originalValue === cia) {
-                        option.selected = true;
-                    }
-                    ciaSelect.appendChild(option);
-                });
+            <!-- Pagination Info -->
+            <div class="text-center mt-2">
+                <small class="text-muted">
+                    Página {{ pagination.page }} de {{ pagination.pages }}
+                    ({{ pagination.total }} registros encontrados)
+                </small>
+            </div>
+        {% endif %}
+    {% else %}
+        <p class="text-muted">Nenhum registro encontrado.</p>
+    {% endif %}
+</div>
 
-                // If the original value was not in the filtered options, add it back
-                if (originalValue && enterpriseData[selectedUeop].indexOf(originalValue) === -1 && originalValue !== "") {
-                    const originalOption = document.createElement('option');
-                    originalOption.value = originalValue;
-                    originalOption.textContent = originalValue;
-                    originalOption.selected = true;
-                    ciaSelect.appendChild(originalOption);
+<script>
+    // Define enterprise data as JavaScript object
+    const enterpriseData = {{ enterprise_data|tojson }};
+
+    // Update CIA dropdown based on selected UEOP
+    document.getElementById('ueop').addEventListener('change', function() {
+        const selectedUeop = this.value;
+        const ciaSelect = document.getElementById('cia');
+        const originalValue = "{{ request.form.cia }}";
+
+        // Clear current options
+        ciaSelect.innerHTML = '<option value="">Todas as CIAs</option>';
+
+        if (selectedUeop && enterpriseData[selectedUeop]) {
+            // Add only CIAs related to selected UEOP
+            enterpriseData[selectedUeop].forEach(function(cia) {
+                const option = document.createElement('option');
+                option.value = cia;
+                option.textContent = cia;
+                // Preserve the form value if it matches this CIA
+                if (originalValue === cia) {
+                    option.selected = true;
                 }
-            } else {
-                // If no UEOP selected, show all CIAs
-                const allCias = [];
-                for (const ueop in enterpriseData) {
-                    enterpriseData[ueop].forEach(function(cia) {
-                        if (!allCias.includes(cia)) {
-                            allCias.push(cia);
-                        }
-                    });
-                }
+                ciaSelect.appendChild(option);
+            });
 
-                allCias.forEach(function(cia) {
-                    const option = document.createElement('option');
-                    option.value = cia;
-                    option.textContent = cia;
-                    // Preserve the form value if it matches this CIA
-                    if (originalValue === cia) {
-                        option.selected = true;
+            // If the original value was not in the filtered options, add it back
+            if (originalValue && enterpriseData[selectedUeop].indexOf(originalValue) === -1 && originalValue !== "") {
+                const originalOption = document.createElement('option');
+                originalOption.value = originalValue;
+                originalOption.textContent = originalValue;
+                originalOption.selected = true;
+                ciaSelect.appendChild(originalOption);
+            }
+        } else {
+            // If no UEOP selected, show all CIAs
+            const allCias = [];
+            for (const ueop in enterpriseData) {
+                enterpriseData[ueop].forEach(function(cia) {
+                    if (!allCias.includes(cia)) {
+                        allCias.push(cia);
                     }
-                    ciaSelect.appendChild(option);
                 });
             }
-        });
 
-        // Trigger change event on page load to set initial state if UEOP is already selected
-        document.getElementById('ueop').dispatchEvent(new Event('change'));
-    </script>
-</body>
-</html>
+            allCias.forEach(function(cia) {
+                const option = document.createElement('option');
+                option.value = cia;
+                option.textContent = cia;
+                // Preserve the form value if it matches this CIA
+                if (originalValue === cia) {
+                    option.selected = true;
+                }
+                ciaSelect.appendChild(option);
+            });
+        }
+    });
+
+    // Trigger change event on page load to set initial state if UEOP is already selected
+    document.getElementById('ueop').dispatchEvent(new Event('change'));
+</script>
+{% endblock %}

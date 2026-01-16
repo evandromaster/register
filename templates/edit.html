@@ -1,222 +1,302 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editar Usuário</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
-    <div class="container mt-5">
-        <h1 class="mb-4">Editar Usuário</h1>
+{% extends "menu.html" %}
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+{% block title %}Editar Usuário{% endblock %}
 
-        <div class="row mb-3">
-            <div class="col-md-12">
-                <small class="text-muted">Última modificação: {{ user.data_modificacao.strftime('%d/%m/%Y %H:%M:%S') if user.data_modificacao else 'Nunca' }}</small>
-            </div>
+{% block content %}
+<style>
+    .profile-image {
+        transition: opacity 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .profile-image:hover {
+        opacity: 0.8 !important;
+        box-shadow: 0 0 10px rgba(0, 123, 255, 0.5) !important;
+    }
+
+    /* Adjust spacing and sizing for profile image and fields */
+    .profile-image-section {
+        margin-bottom: 0.5rem; /* Reduce space below image */
+    }
+
+    .profile-fields-container {
+        padding-left: 1rem; /* Reduce left padding to bring fields closer to image */
+    }
+
+    .profile-field {
+        margin-bottom: 0.5rem; /* Reduce space between fields */
+    }
+
+    /* Increase width of key fields */
+    #nome_completo {
+        min-width: 100%;
+        width: auto;
+        height: calc(1.5em + 0.75rem + 2px); /* Increase height */
+    }
+
+    #infopen, #cpf {
+        min-width: 100%;
+        width: auto;
+        height: calc(1.5em + 0.75rem + 2px); /* Increase height */
+    }
+
+    /* Make the fields more visually prominent */
+    .profile-field .form-control {
+        font-size: 1.1rem; /* Slightly larger font */
+    }
+</style>
+
+<div class="container mt-5">
+    <h1 class="mb-4">Editar Usuário</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <small class="text-muted">Última modificação: {{ user.data_modificacao.strftime('%d/%m/%Y %H:%M:%S') if user.data_modificacao else 'Nunca' }}</small>
         </div>
+    </div>
 
-        <form method="POST" action="{{ url_for('edit', user_id=user.id) }}" enctype="multipart/form-data">
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="infopen" class="form-label">Infopen *</label>
-                    <input type="text" class="form-control" id="infopen" name="infopen" value="{{ user.infopen or '' }}" required>
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label for="nome_completo" class="form-label">Nome Completo *</label>
-                    <input type="text" class="form-control" id="nome_completo" name="nome_completo" value="{{ user.nome_completo or '' }}" required>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="cpf" class="form-label">CPF</label>
-                    <input type="text" class="form-control" id="cpf" name="cpf" value="{{ user.cpf or '' }}" placeholder="000.000.000-00">
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label for="imagem_perfil" class="form-label">Imagem de Perfil</label>
-                    <input type="file" class="form-control" id="imagem_perfil" name="imagem_perfil" accept="image/*">
+    <form method="POST" action="{{ url_for('edit', user_id=user.id) }}" enctype="multipart/form-data">
+        <div class="row mb-2"> <!-- Reduced margin bottom -->
+            <div class="col-md-3">
+                <div class="profile-image-section">
+                    <label class="form-label">Imagem de Perfil</label>
+                    <input type="file" class="form-control d-none" id="imagem_perfil" name="imagem_perfil" accept="image/*" onchange="document.getElementById('profileImage').src = URL.createObjectURL(this.files[0]);">
                     {% if image_exists %}
-                    <div class="mt-2">
-                        <label class="form-label">Imagem Atual:</label>
-                        <br>
-                        <img src="{{ url_for('get_image', infopen=user.infopen) }}" alt="Imagem de Perfil" class="img-thumbnail" style="max-width: 150px; max-height: 150px;">
+                    <div class="mt-1"> <!-- Reduced margin top -->
+                        <img src="{{ url_for('get_image', infopen=user.infopen) }}" alt="Imagem de Perfil" class="img-thumbnail profile-image" id="profileImage" style="max-width: 150px; max-height: 150px; cursor: pointer; position: relative;" title="Clique para alterar a imagem">
+                    </div>
+                    {% else %}
+                    <div class="mt-1"> <!-- Reduced margin top -->
+                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' fill='%23ddd'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='12' fill='%23666'%3ESem imagem%3C/text%3E%3C/svg%3E" alt="Imagem de Perfil" class="img-thumbnail profile-image" id="profileImage" style="max-width: 150px; max-height: 150px; cursor: pointer; position: relative;" title="Clique para alterar a imagem">
                     </div>
                     {% endif %}
                 </div>
             </div>
-
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="rua" class="form-label">Rua</label>
-                    <input type="text" class="form-control" id="rua" name="rua" value="{{ user.rua or '' }}">
+            <div class="col-md-9 profile-fields-container">
+                <div class="mb-2 profile-field"> <!-- Reduced margin bottom and added class -->
+                    <label for="nome_completo" class="form-label">Nome Completo *</label>
+                    <input type="text" class="form-control" id="nome_completo" name="nome_completo" value="{{ user.nome_completo or '' }}" required>
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label for="bairro" class="form-label">Bairro</label>
-                    <input type="text" class="form-control" id="bairro" name="bairro" value="{{ user.bairro or '' }}">
-                </div>
-                <div class="col-md-2 mb-3">
-                    <label for="numero" class="form-label">Número</label>
-                    <input type="text" class="form-control" id="numero" name="numero" value="{{ user.numero or '' }}">
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="municipio" class="form-label">Município</label>
-                    <select class="form-control" id="municipio" name="municipio">
-                        <option value="">Selecione um Município</option>
-                        {% for municipio in municipalities %}
-                            <option value="{{ municipio }}" {% if user.municipio == municipio %}selected{% endif %}>{{ municipio }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <label for="ueop" class="form-label">UEOP</label>
-                    <select class="form-control" id="ueop" name="ueop">
-                        <option value="">Selecione uma UEOP</option>
-                        {% for ueop_name in enterprise_data.keys() %}
-                            <option value="{{ ueop_name }}" {% if user.ueop == ueop_name %}selected{% endif %}>{{ ueop_name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <label for="cia" class="form-label">CIA</label>
-                    <select class="form-control" id="cia" name="cia">
-                        <option value="">Selecione uma CIA</option>
-                        {% for cias in enterprise_data.values() %}
-                            {% for cia_name in cias %}
-                                <option value="{{ cia_name }}" {% if user.cia == cia_name %}selected{% endif %}>{{ cia_name }}</option>
-                            {% endfor %}
-                        {% endfor %}
-                    </select>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-2 profile-field"> <!-- Added class and reduced margin -->
+                            <label for="infopen" class="form-label">Infopen *</label>
+                            <input type="text" class="form-control" id="infopen" name="infopen" value="{{ user.infopen or '' }}" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-2 profile-field"> <!-- Added class and reduced margin -->
+                            <label for="cpf" class="form-label">CPF</label>
+                            <input type="text" class="form-control" id="cpf" name="cpf" value="{{ user.cpf or '' }}" placeholder="000.000.000-00">
+                        </div>
+                    </div>
                 </div>
             </div>
+        </div>
 
-            <div class="mb-3">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="rua" class="form-label">Rua</label>
+                <input type="text" class="form-control" id="rua" name="rua" value="{{ user.rua or '' }}">
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="bairro" class="form-label">Bairro</label>
+                <input type="text" class="form-control" id="bairro" name="bairro" value="{{ user.bairro or '' }}">
+            </div>
+            <div class="col-md-2 mb-3">
+                <label for="numero" class="form-label">Número</label>
+                <input type="text" class="form-control" id="numero" name="numero" value="{{ user.numero or '' }}">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="municipio" class="form-label">Município</label>
+                <select class="form-control" id="municipio" name="municipio">
+                    <option value="">Selecione um Município</option>
+                    {% for municipio in municipalities %}
+                        <option value="{{ municipio }}" {% if user.municipio == municipio %}selected{% endif %}>{{ municipio }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 mb-3">
+                <label for="ueop" class="form-label">UEOP</label>
+                <select class="form-control" id="ueop" name="ueop">
+                    <option value="">Selecione uma UEOP</option>
+                    {% for ueop_name in enterprise_data.keys() %}
+                        <option value="{{ ueop_name }}" {% if user.ueop == ueop_name %}selected{% endif %}>{{ ueop_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 mb-3">
+                <label for="cia" class="form-label">CIA</label>
+                <select class="form-control" id="cia" name="cia">
+                    <option value="">Selecione uma CIA</option>
+                    {% for cias in enterprise_data.values() %}
+                        {% for cia_name in cias %}
+                            <option value="{{ cia_name }}" {% if user.cia == cia_name %}selected{% endif %}>{{ cia_name }}</option>
+                        {% endfor %}
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-12">
                 <label for="restricoes_judiciais" class="form-label">Restrições Judiciais</label>
                 <textarea class="form-control" id="restricoes_judiciais" name="restricoes_judiciais" rows="3">{{ user.restricoes_judiciais or '' }}</textarea>
             </div>
+        </div>
 
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="latitude" class="form-label">Latitude</label>
-                    <div class="input-group">
-                        <input type="text" class="form-control" id="latitude" name="latitude" value="{{ user.latitude or '' }}" placeholder="-90.0 to 90.0">
-                        <button type="button" class="btn btn-outline-secondary" id="getCoordinatesBtn">Obter coordenadas</button>
-                    </div>
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label for="longitude" class="form-label">Longitude</label>
-                    <input type="text" class="form-control" id="longitude" name="longitude" value="{{ user.longitude or '' }}" placeholder="-180.0 to 180.0">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="telefone" class="form-label">Telefone</label>
+                <input type="text" class="form-control" id="telefone" name="telefone" value="{{ user.telefone or '' }}" placeholder="(00) 00000-0000">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="observacoes" class="form-label">Observações</label>
+                <textarea class="form-control" id="observacoes" name="observacoes" rows="3">{{ user.observacoes or '' }}</textarea>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="latitude" class="form-label">Latitude</label>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="latitude" name="latitude" value="{{ user.latitude or '' }}" placeholder="-90.0 to 90.0">
+                    <button type="button" class="btn btn-outline-secondary" id="getCoordinatesBtn">Obter coordenadas</button>
                 </div>
             </div>
+            <div class="col-md-6 mb-3">
+                <label for="longitude" class="form-label">Longitude</label>
+                <input type="text" class="form-control" id="longitude" name="longitude" value="{{ user.longitude or '' }}" placeholder="-180.0 to 180.0">
+            </div>
+        </div>
 
-            <button type="submit" class="btn btn-primary">Atualizar</button>
-            <a href="{{ url_for('search') }}" class="btn btn-secondary">Voltar à Lista</a>
-        </form>
-    </div>
+        <div class="row">
+            <div class="col-md-12">
+                <button type="submit" class="btn btn-primary">Atualizar</button>
+                <a href="{{ url_for('search') }}" class="btn btn-secondary">Voltar à Lista</a>
+                <a href="{{ url_for('seeu') }}?infopen={{ user.infopen }}" class="btn btn-info">SEEU</a>
+            </div>
+        </div>
+    </form>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Define enterprise data as JavaScript object
-        const enterpriseData = {{ enterprise_data|tojson }};
+<script>
+    // Define enterprise data as JavaScript object
+    const enterpriseData = {{ enterprise_data|tojson }};
 
-        // Update CIA dropdown based on selected UEOP
-        document.getElementById('ueop').addEventListener('change', function() {
-            const selectedUeop = this.value;
-            const ciaSelect = document.getElementById('cia');
-            const originalValue = "{{ user.cia }}";
+    // Update CIA dropdown based on selected UEOP
+    document.getElementById('ueop').addEventListener('change', function() {
+        const selectedUeop = this.value;
+        const ciaSelect = document.getElementById('cia');
+        const originalValue = "{{ user.cia }}";
 
-            // Clear current options
-            ciaSelect.innerHTML = '<option value="">Selecione uma CIA</option>';
+        // Clear current options
+        ciaSelect.innerHTML = '<option value="">Selecione uma CIA</option>';
 
-            if (selectedUeop && enterpriseData[selectedUeop]) {
-                // Add only CIAs related to selected UEOP
-                enterpriseData[selectedUeop].forEach(function(cia) {
-                    const option = document.createElement('option');
-                    option.value = cia;
-                    option.textContent = cia;
-                    // Preserve the form value if it matches this CIA
-                    if (originalValue === cia) {
-                        option.selected = true;
-                    }
-                    ciaSelect.appendChild(option);
-                });
-
-                // If the original value was not in the filtered options, add it back
-                if (originalValue && enterpriseData[selectedUeop].indexOf(originalValue) === -1 && originalValue !== "") {
-                    const originalOption = document.createElement('option');
-                    originalOption.value = originalValue;
-                    originalOption.textContent = originalValue;
-                    originalOption.selected = true;
-                    ciaSelect.appendChild(originalOption);
+        if (selectedUeop && enterpriseData[selectedUeop]) {
+            // Add only CIAs related to selected UEOP
+            enterpriseData[selectedUeop].forEach(function(cia) {
+                const option = document.createElement('option');
+                option.value = cia;
+                option.textContent = cia;
+                // Preserve the form value if it matches this CIA
+                if (originalValue === cia) {
+                    option.selected = true;
                 }
-            } else {
-                // If no UEOP selected, show all CIAs
-                const allCias = [];
-                for (const ueop in enterpriseData) {
-                    enterpriseData[ueop].forEach(function(cia) {
-                        if (!allCias.includes(cia)) {
-                            allCias.push(cia);
-                        }
-                    });
-                }
+                ciaSelect.appendChild(option);
+            });
 
-                allCias.forEach(function(cia) {
-                    const option = document.createElement('option');
-                    option.value = cia;
-                    option.textContent = cia;
-                    // Preserve the form value if it matches this CIA
-                    if (originalValue === cia) {
-                        option.selected = true;
+            // If the original value was not in the filtered options, add it back
+            if (originalValue && enterpriseData[selectedUeop].indexOf(originalValue) === -1 && originalValue !== "") {
+                const originalOption = document.createElement('option');
+                originalOption.value = originalValue;
+                originalOption.textContent = originalValue;
+                originalOption.selected = true;
+                ciaSelect.appendChild(originalOption);
+            }
+        } else {
+            // If no UEOP selected, show all CIAs
+            const allCias = [];
+            for (const ueop in enterpriseData) {
+                enterpriseData[ueop].forEach(function(cia) {
+                    if (!allCias.includes(cia)) {
+                        allCias.push(cia);
                     }
-                    ciaSelect.appendChild(option);
                 });
             }
-        });
 
-        // Trigger change event on page load to set initial state if UEOP is already selected
-        document.getElementById('ueop').dispatchEvent(new Event('change'));
-
-        // Function to receive coordinates from the map modal
-        function receiveCoordinates(lat, lng) {
-            document.getElementById('latitude').value = lat;
-            document.getElementById('longitude').value = lng;
+            allCias.forEach(function(cia) {
+                const option = document.createElement('option');
+                option.value = cia;
+                option.textContent = cia;
+                // Preserve the form value if it matches this CIA
+                if (originalValue === cia) {
+                    option.selected = true;
+                }
+                ciaSelect.appendChild(option);
+            });
         }
+    });
 
-        // Open the map modal in a new window when the button is clicked
-        document.getElementById('getCoordinatesBtn').addEventListener('click', function() {
-            // Open the map page in a new window
-            const mapWindow = window.open('/map', 'mapModal', 'width=800,height=700,scrollbars=yes,resizable=yes');
+    // Trigger change event on page load to set initial state if UEOP is already selected
+    document.getElementById('ueop').dispatchEvent(new Event('change'));
 
-            // Focus the new window
-            if (mapWindow) {
-                mapWindow.focus();
-            }
-        });
+    // Function to receive coordinates from the map modal
+    function receiveCoordinates(lat, lng) {
+        document.getElementById('latitude').value = lat;
+        document.getElementById('longitude').value = lng;
+    }
 
-        // Listen for messages from the map modal (for alternative implementation)
-        window.addEventListener('message', function(event) {
-            if (event.data.type === 'coordinatesSelected') {
-                document.getElementById('latitude').value = event.data.latitude;
-                document.getElementById('longitude').value = event.data.longitude;
-            }
-            else if (event.data.type === 'closeMapModal') {
-                // If needed, handle close modal event
-            }
-        });
-    </script>
-</body>
-</html>
+    // Open the map modal in a new window when the button is clicked
+    document.getElementById('getCoordinatesBtn').addEventListener('click', function() {
+        // Open the map page in a new window
+        const mapWindow = window.open('/map', 'mapModal', 'width=800,height=700,scrollbars=yes,resizable=yes');
+
+        // Focus the new window
+        if (mapWindow) {
+            mapWindow.focus();
+        }
+    });
+
+    // Listen for messages from the map modal (for alternative implementation)
+    window.addEventListener('message', function(event) {
+        if (event.data.type === 'coordinatesSelected') {
+            document.getElementById('latitude').value = event.data.latitude;
+            document.getElementById('longitude').value = event.data.longitude;
+        }
+        else if (event.data.type === 'closeMapModal') {
+            // If needed, handle close modal event
+        }
+    });
+
+    // Add click event to profile image to trigger file input
+    document.getElementById('profileImage').addEventListener('click', function() {
+        document.getElementById('imagem_perfil').click();
+    });
+
+    // Add hover effect to profile image
+    const profileImage = document.getElementById('profileImage');
+    profileImage.addEventListener('mouseenter', function() {
+        this.style.opacity = '0.8';
+        this.style.boxShadow = '0 0 10px rgba(0, 123, 255, 0.5)';
+    });
+
+    profileImage.addEventListener('mouseleave', function() {
+        this.style.opacity = '1';
+        this.style.boxShadow = 'none';
+    });
+</script>
+{% endblock %}

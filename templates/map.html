@@ -1,68 +1,67 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Selecionar Coordenadas</title>
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <style>
-        body {
-            margin: 0;
-            padding: 20px;
-            font-family: Arial, sans-serif;
-        }
-        #map {
-            height: 500px;
-            width: 100%;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-        }
-        .controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .coordinates-display {
-            font-weight: bold;
-            color: #007bff;
-        }
-        .btn {
-            padding: 8px 16px;
-            margin: 0 5px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .btn-primary {
-            background-color: #007bff;
-            color: white;
-        }
-        .btn-secondary {
-            background-color: #6c757d;
-            color: white;
-        }
-        .instructions {
-            margin-bottom: 15px;
-            padding: 10px;
-            background-color: #f8f9fa;
-            border-left: 4px solid #007bff;
-        }
-    </style>
-</head>
-<body>
+{% extends "menu.html" %}
+
+{% block title %}Selecionar Coordenadas{% endblock %}
+
+{% block content %}
+<style>
+    #map {
+        height: 500px;
+        width: 100%;
+        margin-bottom: 15px;
+        border: 1px solid #ccc;
+    }
+    .controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .coordinates-display {
+        font-weight: bold;
+        color: #007bff;
+        margin-top: 15px;
+    }
+    .btn {
+        padding: 8px 16px;
+        margin: 0 5px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+    }
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+    }
+    .instructions {
+        margin-bottom: 15px;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-left: 4px solid #007bff;
+    }
+</style>
+
+<div class="container mt-5">
     <h2>Selecionar Localização no Mapa</h2>
-    
+
     <div class="instructions">
         <p><strong>Instruções:</strong> Clique em qualquer ponto do mapa para selecionar a localização. As coordenadas aparecerão abaixo do mapa.</p>
     </div>
 
+    <div style="margin-bottom: 15px;">
+        <label for="addressSearch">Pesquisar endereço:</label>
+        <input type="text" id="addressSearch" placeholder="Digite um endereço completo..." style="width: 70%; padding: 8px; margin-right: 10px;">
+        <button id="searchBtn" class="btn btn-primary">Buscar</button>
+    </div>
+
     <div id="map"></div>
-    
+
     <div class="coordinates-display">
         <p>Coordenadas selecionadas: <span id="coords">Clique no mapa para selecionar</span></p>
     </div>
-    
+
     <div class="controls">
         <div>
             <button id="adquirirBtn" class="btn btn-primary" disabled>Adquirir</button>
@@ -74,86 +73,149 @@
             <span id="zoomValue">13</span>
         </div>
     </div>
+</div>
 
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script>
-        // Initialize the map
-        const map = L.map('map').setView([-20.164738, -44.914856], 13); // Centered at specified coordinates with urban zoom level
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
-        // Add OpenStreetMap tiles
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(map);
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    // Initialize the map
+    const map = L.map('map').setView([-20.164738, -44.914856], 13); // Centered at specified coordinates with urban zoom level
 
-        let selectedMarker = null;
-        let selectedLat = null;
-        let selectedLng = null;
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
 
-        // Handle map click to place marker
-        map.on('click', function(e) {
-            // Remove existing marker if present
-            if (selectedMarker) {
-                map.removeLayer(selectedMarker);
-            }
-            
-            // Add new marker at clicked location
-            selectedMarker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
-            
-            // Update coordinates display
-            selectedLat = e.latlng.lat.toFixed(6);
-            selectedLng = e.latlng.lng.toFixed(6);
-            document.getElementById('coords').textContent = 
-                `Latitude: ${selectedLat}, Longitude: ${selectedLng}`;
-            
-            // Enable the Adquirir button
-            document.getElementById('adquirirBtn').disabled = false;
-        });
+    let selectedMarker = null;
+    let selectedLat = null;
+    let selectedLng = null;
 
-        // Handle zoom level changes
-        document.getElementById('zoomLevel').addEventListener('input', function() {
-            const zoomLevel = parseInt(this.value);
-            document.getElementById('zoomValue').textContent = zoomLevel;
-            map.setZoom(zoomLevel);
-        });
+    // Handle map click to place marker
+    map.on('click', function(e) {
+        // Remove existing marker if present
+        if (selectedMarker) {
+            map.removeLayer(selectedMarker);
+        }
 
-        map.on('zoomend', function() {
-            const currentZoom = map.getZoom();
-            document.getElementById('zoomLevel').value = currentZoom;
-            document.getElementById('zoomValue').textContent = currentZoom;
-        });
+        // Add new marker at clicked location
+        selectedMarker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
 
-        // Adquirir button functionality
-        document.getElementById('adquirirBtn').addEventListener('click', function() {
-            if (selectedLat !== null && selectedLng !== null) {
-                // Send coordinates back to parent window
-                if (window.opener) {
-                    // For popup window
-                    window.opener.receiveCoordinates(selectedLat, selectedLng);
-                    window.close();
+        // Update coordinates display
+        selectedLat = e.latlng.lat.toFixed(6);
+        selectedLng = e.latlng.lng.toFixed(6);
+        document.getElementById('coords').textContent =
+            `Latitude: ${selectedLat}, Longitude: ${selectedLng}`;
+
+        // Enable the Adquirir button
+        document.getElementById('adquirirBtn').disabled = false;
+    });
+
+    // Address search functionality
+    document.getElementById('searchBtn').addEventListener('click', function() {
+        const address = document.getElementById('addressSearch').value.trim();
+        if (!address) {
+            alert('Por favor, digite um endereço para pesquisar.');
+            return;
+        }
+
+        // Show loading message
+        document.getElementById('coords').textContent = 'Buscando endereço...';
+
+        // Use Nominatim API for geocoding
+        const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`;
+
+        fetch(geocodeUrl)
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.length > 0) {
+                    const location = data[0];
+                    const lat = parseFloat(location.lat);
+                    const lon = parseFloat(location.lon);
+
+                    // Remove existing marker if present
+                    if (selectedMarker) {
+                        map.removeLayer(selectedMarker);
+                    }
+
+                    // Set map view to the geocoded location
+                    map.setView([lat, lon], 15); // Zoom in to show the location clearly
+
+                    // Add marker at the geocoded location
+                    selectedMarker = L.marker([lat, lon]).addTo(map);
+
+                    // Update coordinates display
+                    selectedLat = lat.toFixed(6);
+                    selectedLng = lon.toFixed(6);
+                    document.getElementById('coords').textContent =
+                        `Latitude: ${selectedLat}, Longitude: ${selectedLng}`;
+
+                    // Enable the Adquirir button
+                    document.getElementById('adquirirBtn').disabled = false;
                 } else {
-                    // For modal within same window - send message to parent
-                    window.parent.postMessage({
-                        type: 'coordinatesSelected',
-                        latitude: selectedLat,
-                        longitude: selectedLng
-                    }, '*');
+                    document.getElementById('coords').textContent = 'Endereço não encontrado. Tente outro.';
+                    alert('Endereço não encontrado. Por favor, tente novamente com outro endereço.');
                 }
-            }
-        });
+            })
+            .catch(error => {
+                console.error('Error during geocoding:', error);
+                document.getElementById('coords').textContent = 'Erro na busca do endereço.';
+                alert('Ocorreu um erro ao buscar o endereço. Por favor, tente novamente.');
+            });
+    });
 
-        // Close button functionality
-        document.getElementById('closeBtn').addEventListener('click', function() {
+    // Allow Enter key to trigger search
+    document.getElementById('addressSearch').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            document.getElementById('searchBtn').click();
+        }
+    });
+
+    // Handle zoom level changes
+    document.getElementById('zoomLevel').addEventListener('input', function() {
+        const zoomLevel = parseInt(this.value);
+        document.getElementById('zoomValue').textContent = zoomLevel;
+        map.setZoom(zoomLevel);
+    });
+
+    map.on('zoomend', function() {
+        const currentZoom = map.getZoom();
+        document.getElementById('zoomLevel').value = currentZoom;
+        document.getElementById('zoomValue').textContent = currentZoom;
+    });
+
+    // Adquirir button functionality
+    document.getElementById('adquirirBtn').addEventListener('click', function() {
+        if (selectedLat !== null && selectedLng !== null) {
+            // Send coordinates back to parent window
             if (window.opener) {
                 // For popup window
+                window.opener.receiveCoordinates(selectedLat, selectedLng);
                 window.close();
             } else {
-                // For modal - send close message to parent
+                // For modal within same window - send message to parent
                 window.parent.postMessage({
-                    type: 'closeMapModal'
+                    type: 'coordinatesSelected',
+                    latitude: selectedLat,
+                    longitude: selectedLng
                 }, '*');
             }
-        });
-    </script>
-</body>
-</html>
+        }
+    });
+
+    // Close button functionality
+    document.getElementById('closeBtn').addEventListener('click', function() {
+        if (window.opener) {
+            // For popup window
+            window.close();
+        } else {
+            // For modal - send close message to parent
+            window.parent.postMessage({
+                type: 'closeMapModal'
+            }, '*');
+        }
+    });
+</script>
+{% endblock %}
